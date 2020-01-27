@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Reflection;
+using IdentityServer4.EntityFramework.DbContexts;
+using IdentityServer4.EntityFramework.Mappers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -38,8 +37,8 @@ namespace ThAmCo.Auth
                     .AddEntityFrameworkStores<AccountDbContext>()
                     .AddDefaultTokenProviders();
 
-            // add bespoke factory to translate our AppUser into claims
-            services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, AppClaimsPrincipalFactory>();
+			// add bespoke factory to translate our AppUser into claims
+			services.AddScoped<IUserClaimsPrincipalFactory<AppUser>, AppClaimsPrincipalFactory>();
 
             // configure Identity security options
             services.Configure<IdentityOptions>(options =>
@@ -66,25 +65,46 @@ namespace ThAmCo.Auth
 
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-            services.AddAuthentication()
+			string azureStorageUri = Environment.GetEnvironmentVariable("JWT_BEARER_AUTHORITY");
+			services.AddAuthentication()
                     .AddJwtBearer("thamco_account_api", options =>
                     {
                         options.Audience = "thamco_account_api";
-                        options.Authority = "https://localhost:5099";
+                        options.Authority = azureStorageUri;
                     });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // configure IdentityServer (provides OpenId Connect and OAuth2)
-            services.AddIdentityServer()
+            /*services.AddIdentityServer()
                     .AddInMemoryIdentityResources(Configuration.GetIdentityResources())
                     .AddInMemoryApiResources(Configuration.GetIdentityApis())
                     .AddInMemoryClients(Configuration.GetIdentityClients())
                     .AddAspNetIdentity<AppUser>()
-                    .AddDeveloperSigningCredential();
-            // TODO: developer signing cert above should be replaced with a real one
-            // TODO: should use AddOperationalStore to persist tokens between app executions
-        }
+                    .AddDeveloperSigningCredential();*/
+
+			var connectionString = Configuration.GetConnectionString("GrantsConnection");
+			var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
+
+			services.AddIdentityServer()
+					.AddConfigurationStore(options =>
+					{
+						options.ConfigureDbContext = b =>
+							b.UseSqlServer(connectionString,
+								sql => sql.MigrationsAssembly(migrationsAssembly));
+					})
+					.AddOperationalStore(options =>
+					{
+						options.ConfigureDbContext = b =>
+							b.UseSqlServer(connectionString,
+								sql => sql.MigrationsAssembly(migrationsAssembly));
+					})
+					.AddAspNetIdentity<AppUser>()
+					.AddDeveloperSigningCredential();
+
+			Configuration.GetIdentityResources();
+			// TODO: developer signing cert above should be replaced with a real one
+		}
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
@@ -104,10 +124,49 @@ namespace ThAmCo.Auth
             app.UseCookiePolicy();
             app.UseAuthentication();
 
-            // use IdentityServer middleware during HTTP requests
-            app.UseIdentityServer();
+			InitializeDatabase(app);
+			// use IdentityServer middleware during HTTP requests
+			app.UseIdentityServer();
             
             app.UseMvc();
         }
-    }
+
+		private void InitializeDatabase(IApplicationBuilder app)
+		{
+			using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+			{
+				serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+
+				var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+				context.Database.Migrate();
+				if (!context.Clients.Any())
+				{
+					foreach (var client in Configuration.GetIdentityClients())
+					{
+						context.Clients.Add(client.ToEntity());
+					}
+					context.SaveChanges();
+				}
+
+				if (!context.IdentityResources.Any())
+				{
+					foreach (var resource in Configuration.GetIdentityResources())
+					{
+						context.IdentityResources.Add(resource.ToEntity());
+					}
+					context.SaveChanges();
+				}
+
+				if (!context.ApiResources.Any())
+				{
+					foreach (var resource in Configuration.GetIdentityApis())
+					{
+						context.ApiResources.Add(resource.ToEntity());
+					}
+					context.SaveChanges();
+				}
+			}
+		}
+
+	}
 }

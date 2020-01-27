@@ -84,7 +84,7 @@ namespace ThAmCo.Auth.Controllers
             var result = await UserManager.CreateAsync(user, newUser.Password);
             if (!result.Succeeded)
             {
-                return BadRequest();
+                return BadRequest(result.Errors.First().Description);
             }
 
             user = await UserManager.FindByEmailAsync(newUser.Email);

@@ -15,15 +15,17 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+		"environmentVariables": {
+			"ASPNETCORE_ENVIRONMENT": "Development",
+			"JWT_BEARER_AUTHORITY": "https://localhost:5099"
+		}
     },
     "ThAmCo.Auth": {
       "commandName": "Project",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
+		"environmentVariables": {
+			"ASPNETCORE_ENVIRONMENT": "Development",
+			"JWT_BEARER_AUTHORITY": "https://localhost:5099"
+		},
       "applicationUrl": "https://localhost:5099"
     }
   }
