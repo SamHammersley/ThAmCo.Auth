@@ -73,16 +73,7 @@ namespace ThAmCo.Auth
                         options.Authority = azureStorageUri;
                     });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-
             // configure IdentityServer (provides OpenId Connect and OAuth2)
-            /*services.AddIdentityServer()
-                    .AddInMemoryIdentityResources(Configuration.GetIdentityResources())
-                    .AddInMemoryApiResources(Configuration.GetIdentityApis())
-                    .AddInMemoryClients(Configuration.GetIdentityClients())
-                    .AddAspNetIdentity<AppUser>()
-                    .AddDeveloperSigningCredential();*/
-
 			var connectionString = Configuration.GetConnectionString("GrantsConnection");
 			var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -100,10 +91,10 @@ namespace ThAmCo.Auth
 								sql => sql.MigrationsAssembly(migrationsAssembly));
 					})
 					.AddAspNetIdentity<AppUser>()
-					.AddDeveloperSigningCredential();
+					.AddDeveloperSigningCredential(persistKey: false);
+			// TODO: developer signing cert above should be replaced with a real one
 
 			Configuration.GetIdentityResources();
-			// TODO: developer signing cert above should be replaced with a real one
 		}
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
