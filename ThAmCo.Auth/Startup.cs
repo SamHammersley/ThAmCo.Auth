@@ -118,8 +118,6 @@ namespace ThAmCo.Auth
 			InitializeDatabase(app);
 			// use IdentityServer middleware during HTTP requests
 			app.UseIdentityServer();
-            
-            app.UseMvc();
         }
 
 		private void InitializeDatabase(IApplicationBuilder app)
