@@ -32,6 +32,7 @@ namespace ThAmCo.Auth
                 x => x.MigrationsHistoryTable("__EFMigrationsHistory", "account")
             ));
 
+			services.AddMvc();
             // configure Identity account management
             services.AddIdentity<AppUser, AppRole>()
                     .AddEntityFrameworkStores<AccountDbContext>()
@@ -65,12 +66,12 @@ namespace ThAmCo.Auth
 
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-			string azureStorageUri = Environment.GetEnvironmentVariable("JWT_BEARER_AUTHORITY");
+			string authorityUri = Environment.GetEnvironmentVariable("JWT_BEARER_AUTHORITY");
 			services.AddAuthentication()
                     .AddJwtBearer("thamco_account_api", options =>
                     {
                         options.Audience = "thamco_account_api";
-                        options.Authority = azureStorageUri;
+                        options.Authority = authorityUri;
                     });
 
             // configure IdentityServer (provides OpenId Connect and OAuth2)
@@ -110,6 +111,7 @@ namespace ThAmCo.Auth
                 app.UseHsts();
             }
 
+            app.UseMvcWithDefaultRoute();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
