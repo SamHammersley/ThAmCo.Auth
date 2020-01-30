@@ -17,10 +17,15 @@ namespace ThAmCo.Auth
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+
+		private readonly IHostingEnvironment _environment;
+
+        public Startup(IConfiguration configuration, IHostingEnvironment environment)
         {
             Configuration = configuration;
-        }
+			_environment = environment;
+
+		}
 
         private IConfiguration Configuration { get; }
 
@@ -79,21 +84,19 @@ namespace ThAmCo.Auth
 			var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
 			services.AddIdentityServer()
-					.AddConfigurationStore(options =>
-					{
-						options.ConfigureDbContext = b =>
-							b.UseSqlServer(connectionString,
-								sql => sql.MigrationsAssembly(migrationsAssembly));
-					})
-					.AddOperationalStore(options =>
-					{
-						options.ConfigureDbContext = b =>
-							b.UseSqlServer(connectionString,
-								sql => sql.MigrationsAssembly(migrationsAssembly));
-					})
-					.AddAspNetIdentity<AppUser>()
-					.AddDeveloperSigningCredential(persistKey: false);
-			// TODO: developer signing cert above should be replaced with a real one
+				.AddConfigurationStore(options =>
+				{
+					options.ConfigureDbContext = b =>
+						b.UseSqlServer(connectionString, sql => sql.MigrationsAssembly(migrationsAssembly));
+				})
+				.AddOperationalStore(options =>
+				{
+					options.ConfigureDbContext = b =>
+					b.UseSqlServer(connectionString, sql => sql.MigrationsAssembly(migrationsAssembly));
+				})
+				.AddAspNetIdentity<AppUser>()
+				.AddDeveloperSigningCredential(persistKey: false);
+				// TODO: developer signing cert above should be replaced with a real one
 
 			Configuration.GetIdentityResources();
 		}
