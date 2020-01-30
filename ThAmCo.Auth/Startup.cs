@@ -120,7 +120,10 @@ namespace ThAmCo.Auth
             app.UseCookiePolicy();
             app.UseAuthentication();
 
-			InitializeDatabase(app);
+			if (Configuration["addclients"].Equals("true"))
+			{
+				InitializeDatabase(app);
+			}
 			// use IdentityServer middleware during HTTP requests
 			app.UseIdentityServer();
         }
@@ -133,32 +136,23 @@ namespace ThAmCo.Auth
 
 				var context = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 				context.Database.Migrate();
-				if (!context.Clients.Any())
+				foreach (var client in Configuration.GetIdentityClients())
 				{
-					foreach (var client in Configuration.GetIdentityClients())
-					{
-						context.Clients.Add(client.ToEntity());
-					}
-					context.SaveChanges();
+					context.Clients.Add(client.ToEntity());
 				}
+				context.SaveChanges();
 
-				if (!context.IdentityResources.Any())
+				foreach (var resource in Configuration.GetIdentityResources())
 				{
-					foreach (var resource in Configuration.GetIdentityResources())
-					{
-						context.IdentityResources.Add(resource.ToEntity());
-					}
-					context.SaveChanges();
+					context.IdentityResources.Add(resource.ToEntity());
 				}
+				context.SaveChanges();
 
-				if (!context.ApiResources.Any())
+				foreach (var resource in Configuration.GetIdentityApis())
 				{
-					foreach (var resource in Configuration.GetIdentityApis())
-					{
-						context.ApiResources.Add(resource.ToEntity());
-					}
-					context.SaveChanges();
+					context.ApiResources.Add(resource.ToEntity());
 				}
+				context.SaveChanges();
 			}
 		}
 
