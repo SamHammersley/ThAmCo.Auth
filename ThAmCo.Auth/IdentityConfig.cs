@@ -29,7 +29,9 @@ namespace ThAmCo.Auth
 				new ApiResource("thamco_orders_api", "ThAmCo Orders Service")
 				{
 					UserClaims = { "name", "role" }
-				}
+				},
+
+				new ApiResource("thamco_invoices_api", "ThAmCo Invoices Service")
 			};
         }
 
@@ -37,7 +39,25 @@ namespace ThAmCo.Auth
         {
             return new Client[]
             {
+				new Client
+				{
+					ClientId = "thamco_invoices_api",
+					ClientName = "ThAmCo Invoice Service",
 
+					AllowedGrantTypes = GrantTypes.ClientCredentials,
+
+					ClientSecrets =
+					{
+						new Secret("secret".Sha256())
+					},
+
+					AllowedScopes =
+					{
+						"thamco_orders_api"
+					},
+
+					RequireConsent = false
+				},
 				new Client
 				{
 					ClientId = "thamco_orders_api",
@@ -52,7 +72,7 @@ namespace ThAmCo.Auth
 
 					AllowedScopes =
 					{
-						"thamco_account_api"
+						"thamco_invoices_api"
 					},
 
 					RequireConsent = false
